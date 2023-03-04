@@ -1,0 +1,32 @@
+@import "@/styles/_mixins";
+
+.contentContainer {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+
+  &__calendar {
+    @include calendar-styles;
+  }
+
+  &__newEvent {
+    position: absolute;
+    top: 0;
+    left: 100%;
+    width: 100%;
+    height: 100%;
+
+    @include calendar-styles;
+  }
+}
+
+.newEventContainer {
+  height: 600px;
+}
+
+.slideToLeft {
+  transform: translateX(-100%);
+}

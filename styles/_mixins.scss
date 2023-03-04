@@ -1,0 +1,6 @@
+@mixin calendar-styles {
+  width: 400px;
+  padding: 50px;
+  transform: translateX(0);
+  transition: 0.3s all ease;
+}

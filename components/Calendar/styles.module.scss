@@ -1,0 +1,9 @@
+@import "@/styles/_mixins";
+
+.calendar {
+  &__containerButton {
+    display: flex;
+    justify-content: end;
+    margin-bottom: 15px;
+  }
+}
