@@ -18,6 +18,8 @@
     "paths": {
       "@/components/*": ["components/*"],
       "@/interfaces/*": ["interfaces/*"],
+      "@/api/*": ["api/*"],
+      "@/contexts/*": ["contexts/*"],
       "@/utils/*": ["utils/*"],
       "@/pages/*": ["pages/*"],
       "@/styles/*": ["styles/*"],

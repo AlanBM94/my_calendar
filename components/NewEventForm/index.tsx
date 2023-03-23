@@ -1,6 +1,6 @@
-import { NewEventProps } from '@/interfaces/index';
-import { ArrowBack, Check } from '@mui/icons-material';
-import dayjs, { Dayjs } from 'dayjs';
+import { NewEventProps } from "@/interfaces/index";
+import { ArrowBack, Check } from "@mui/icons-material";
+import dayjs, { Dayjs } from "dayjs";
 import {
   Fab,
   TextField,
@@ -11,25 +11,26 @@ import {
   Alert,
   CircularProgress,
   Box,
-} from '@mui/material';
-import { customMuiStyles } from '@/utils/index';
-import styles from './styles.module.scss';
-import React, { useEffect, useState } from 'react';
-import { DateTimePicker } from '@mui/x-date-pickers';
-import { useForm } from 'react-hook-form';
+} from "@mui/material";
+import { customMuiStyles } from "@/utils/index";
+import styles from "./styles.module.scss";
+import React, { useEffect, useContext } from "react";
+import { DateTimePicker } from "@mui/x-date-pickers";
+import { useForm } from "react-hook-form";
+import { EventsContext } from "@/contexts/index";
 
 type FormData = {
   name: string;
   dateAndTime: string;
 };
 
+//TODO: make tests for this component
 const NewEventForm: React.FC<NewEventProps> = ({ isVisible, setNewEvent }) => {
   const [dateAndTime, setDateAndTime] = React.useState<Dayjs | null>(dayjs());
-  const [alarm, setAlarm] = React.useState<String>('at-the-time-of-the-event');
-  const [createdEventSuccess, setCreatedEventSuccess] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isError, setIsError] = useState(false);
-  const [name, setName] = React.useState<String>('');
+  const [alarm, setAlarm] = React.useState<string>("at-the-time-of-the-event");
+  const [repeat, setRepeat] = React.useState<string>("never");
+  const [name, setName] = React.useState<string>("");
+  const [disableSubmit, setDisableSubmit] = React.useState<boolean>(false);
   const {
     register,
     resetField,
@@ -38,94 +39,105 @@ const NewEventForm: React.FC<NewEventProps> = ({ isVisible, setNewEvent }) => {
     clearErrors,
     formState: { errors },
   } = useForm<FormData>();
+  const { createEvent, resetNewEvent, state } = useContext(EventsContext);
+  const { isLoading, error, data } = state.newEvent;
 
   const handleChange = (newValue: Dayjs | null) => {
     setDateAndTime(newValue);
   };
 
   const handleName = (
-    e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>,
+    e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>
   ) => {
     setName(e.target.value);
   };
 
   const resetName = () => {
-    setName('');
-    resetField('name');
+    setName("");
+    resetField("name");
   };
 
-  const onCreateEvent = async ({ name, dateAndTime }: FormData) => {
-    setIsLoading(true);
+  const onCreateEvent = async () => {
+    if (!dateAndTime) return;
 
-    setTimeout(() => {
-      setIsLoading(false);
-      setIsError(true);
-      // setCreatedEventSuccess(true);
-    }, 3000);
+    createEvent({
+      name,
+      date: dayjs(dateAndTime).toISOString(),
+      alarm,
+      repeat,
+    });
   };
 
   const onNameBlur = (
-    e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>,
+    e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>
   ) => {
-    if (e.target.value.trim() === '') {
-      return setError('name', {
-        message: 'The name is required',
+    if (e.target.value.trim() === "") {
+      return setError("name", {
+        message: "The name is required",
       });
     }
-    clearErrors('name');
+    clearErrors("name");
+  };
+
+  const resetNewEventHandler = () => {
+    resetNewEvent();
+    setDisableSubmit(false);
   };
 
   useEffect(() => {
     if (isVisible) {
-      resetName();
+      resetNewEventHandler();
     }
   }, [isVisible]);
 
   useEffect(() => {
-    if (createdEventSuccess) {
+    if (data) {
+      setDisableSubmit(true);
+      resetName();
       setTimeout(() => {
-        setCreatedEventSuccess(false);
+        resetNewEventHandler();
       }, 3000);
     }
-  }, [createdEventSuccess]);
+  }, [data]);
 
   useEffect(() => {
-    if (isError) {
+    if (error) {
+      resetName();
       setTimeout(() => {
-        setIsError(false);
+        resetNewEventHandler();
       }, 3000);
     }
-  }, [isError]);
+  }, [error]);
 
   return (
     <div className={styles.newEventForm}>
       <GlobalStyles styles={customMuiStyles} />
-      {createdEventSuccess && (
+      {data && (
         <Alert
           severity="success"
           style={{
-            marginBottom: '10px',
+            marginBottom: "10px",
           }}
-        >{`Event ${name} created`}</Alert>
+        >{`Event ${data.name} created`}</Alert>
       )}
-      {isError && (
+      {error && (
         <Alert
           severity="error"
           style={{
-            marginBottom: '10px',
+            marginBottom: "10px",
           }}
         >
-          Error trying to create an event
+          {error}
         </Alert>
       )}
       {isLoading ? (
         <Box
           sx={{
-            display: 'flex',
-            height: '100%',
-            width: '100%',
-            justifyContent: 'center',
-            alignItems: 'center',
+            display: "flex",
+            height: "100%",
+            width: "100%",
+            justifyContent: "center",
+            alignItems: "center",
           }}
         >
           <CircularProgress />
@@ -141,6 +153,7 @@ const NewEventForm: React.FC<NewEventProps> = ({ isVisible, setNewEvent }) => {
               color="default"
               aria-label="go-back"
               role="go-back-button"
+              disabled={disableSubmit}
               onClick={() => setNewEvent()}
             >
               <ArrowBack />
@@ -153,6 +166,7 @@ const NewEventForm: React.FC<NewEventProps> = ({ isVisible, setNewEvent }) => {
               type="submit"
               aria-label="add"
               role="create-event-button"
+              disabled={disableSubmit}
             >
               <Check />
             </Fab>
@@ -163,8 +177,8 @@ const NewEventForm: React.FC<NewEventProps> = ({ isVisible, setNewEvent }) => {
               id="name"
               label="Name"
               fullWidth
-              {...register('name', {
-                required: 'The name is required',
+              {...register("name", {
+                required: "The name is required",
                 onBlur: onNameBlur,
                 onChange: handleName,
                 validate: (name) => {
@@ -182,13 +196,12 @@ const NewEventForm: React.FC<NewEventProps> = ({ isVisible, setNewEvent }) => {
               <Select
                 native
                 onChange={(e) => {
-                  console.log('this is the e', e.target.value);
-                  setAlarm(e.target.value);
+                  setRepeat(e.target.value);
                 }}
                 value={alarm}
                 inputProps={{
-                  name: 'alarm',
-                  id: 'alarm',
+                  name: "repeat",
+                  id: "repeat",
                 }}
               >
                 <option value="never">Never</option>
@@ -204,13 +217,13 @@ const NewEventForm: React.FC<NewEventProps> = ({ isVisible, setNewEvent }) => {
               <Select
                 native
                 onChange={(e) => {
-                  console.log('this is the e', e.target.value);
+                  console.log("this is the e", e.target.value);
                   setAlarm(e.target.value);
                 }}
                 value={alarm}
                 inputProps={{
-                  name: 'alarm',
-                  id: 'alarm',
+                  name: "alarm",
+                  id: "alarm",
                 }}
               >
                 <option value="at-the-time-of-the-event">
