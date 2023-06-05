@@ -1,37 +1,52 @@
-import { Typography } from '@mui/material';
-import dayjs from 'dayjs';
-import { useRouter } from 'next/router';
-import React from 'react';
-import { EventListItem } from '../EventListItem';
-import styles from './styles.module.scss';
+import { Typography } from "@mui/material";
+import dayjs, { Dayjs } from "dayjs";
+import { useRouter } from "next/router";
+import React, { useEffect, useContext } from "react";
+import { EventListItem } from "../EventListItem";
+import styles from "./styles.module.scss";
+import { EventsContext } from "@/contexts/events";
 
 export const EventList: React.FC = () => {
   const { query } = useRouter();
+  const { eventsState } = useContext(EventsContext);
+  const [eventDate, setEventDate] = React.useState<null | Dayjs>(null);
 
-  const queryDate = query.date as string;
+  useEffect(() => {
+    if (!query.date) return;
+    const queryDate = query.date as string;
+    const [day, month, year] = queryDate.split("-");
+    const currentDate = dayjs(
+      new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+    );
+    setEventDate(currentDate);
+  }, [query]);
 
-  console.log('this is the router', queryDate.split('-'));
-  // año mes y dia
-
-  const [day, month, year] = queryDate.split('-');
-
-  const currentDate = dayjs(
-    new Date(parseInt(year), parseInt(month) - 1, parseInt(day)),
-  );
-
-  console.log('this is the router', currentDate);
+  if (!eventDate) return <></>;
 
   return (
     <div className={styles.eventList}>
       <div className={styles.eventList__title}>
         <Typography fontSize={25} color="#07213a" fontWeight={400}>
-          {currentDate.format('DD MMMM YYYY')}
+          {eventDate.format("DD MMMM YYYY")}
         </Typography>
       </div>
-      <EventListItem />
-      <EventListItem />
-      <EventListItem />
-      <EventListItem />
+      {eventsState.events.length === 0 && (
+        <div className={styles.eventList__empty}>
+          <Typography fontSize={20} color="#07213a" fontWeight={400}>
+            There are no events for this day
+          </Typography>
+        </div>
+      )}
+      {eventsState.events.map((event) => (
+        <EventListItem
+          key={event.id}
+          id={event.id}
+          repeat={event.repeat}
+          name={event.name}
+          date={event.date}
+          alarm={event.alarm}
+        />
+      ))}
     </div>
   );
 };

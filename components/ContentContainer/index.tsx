@@ -1,13 +1,13 @@
-import { Calendar } from '@/components/index';
-import React, { useEffect } from 'react';
-import NewEventForm from '../NewEventForm';
-import styles from './styles.module.scss';
+import { Calendar } from "@/components/index";
+import React, { useEffect } from "react";
+import NewEventForm from "../NewEventForm";
+import styles from "./styles.module.scss";
 
 export const ContentContainer: React.FC = () => {
   const [slideToLeftClass, setSlideToLeftClassDate] =
-    React.useState<string>('');
+    React.useState<string>("");
   const [newEventContainerClass, setNewEventContainerClass] =
-    React.useState<string>('');
+    React.useState<string>("");
   const [newEvent, setNewEvent] = React.useState<boolean>(false);
 
   useEffect(() => {
@@ -16,8 +16,8 @@ export const ContentContainer: React.FC = () => {
       return setSlideToLeftClassDate(styles.slideToLeft);
     }
 
-    setNewEventContainerClass('');
-    setSlideToLeftClassDate('');
+    setNewEventContainerClass("");
+    setSlideToLeftClassDate("");
   }, [newEvent]);
 
   return (

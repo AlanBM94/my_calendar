@@ -1,30 +1,29 @@
+import { EventsContext } from "@/contexts/index";
 import { NewEventProps } from "@/interfaces/index";
+import { customMuiStyles } from "@/utils/index";
 import { ArrowBack, Check } from "@mui/icons-material";
-import dayjs, { Dayjs } from "dayjs";
 import {
+  Alert,
+  Box,
+  CircularProgress,
   Fab,
+  GlobalStyles,
   TextField,
   Typography,
-  GlobalStyles,
-  Select,
-  InputLabel,
-  Alert,
-  CircularProgress,
-  Box,
 } from "@mui/material";
-import { customMuiStyles } from "@/utils/index";
-import styles from "./styles.module.scss";
-import React, { useEffect, useContext } from "react";
 import { DateTimePicker } from "@mui/x-date-pickers";
+import dayjs, { Dayjs } from "dayjs";
+import React, { useContext, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { EventsContext } from "@/contexts/index";
+import AlarmSelect from "../AlarmSelect";
+import RepeatEventSelect from "../RepeatEventSelect";
+import styles from "./styles.module.scss";
 
 type FormData = {
   name: string;
   dateAndTime: string;
 };
 
-//TODO: make tests for this component
 const NewEventForm: React.FC<NewEventProps> = ({ isVisible, setNewEvent }) => {
   const [dateAndTime, setDateAndTime] = React.useState<Dayjs | null>(dayjs());
   const [alarm, setAlarm] = React.useState<string>("at-the-time-of-the-event");
@@ -39,8 +38,8 @@ const NewEventForm: React.FC<NewEventProps> = ({ isVisible, setNewEvent }) => {
     clearErrors,
     formState: { errors },
   } = useForm<FormData>();
-  const { createEvent, resetNewEvent, state } = useContext(EventsContext);
-  const { isLoading, error, data } = state.newEvent;
+  const { createEvent, resetNewEvent, eventsState } = useContext(EventsContext);
+  const { isLoading, error, data } = eventsState.newEvent;
 
   const handleChange = (newValue: Dayjs | null) => {
     setDateAndTime(newValue);
@@ -58,8 +57,6 @@ const NewEventForm: React.FC<NewEventProps> = ({ isVisible, setNewEvent }) => {
   };
 
   const onCreateEvent = async () => {
-    if (!dateAndTime) return;
-
     createEvent({
       name,
       date: dayjs(dateAndTime).toISOString(),
@@ -132,6 +129,7 @@ const NewEventForm: React.FC<NewEventProps> = ({ isVisible, setNewEvent }) => {
       )}
       {isLoading ? (
         <Box
+          role="loading-spinner"
           sx={{
             display: "flex",
             height: "100%",
@@ -187,81 +185,23 @@ const NewEventForm: React.FC<NewEventProps> = ({ isVisible, setNewEvent }) => {
               })}
               error={!!errors.name}
               variant="standard"
+              helperText={errors.name?.message}
               value={name}
             />
             <div
               className={`${styles.newEventForm__select} ${styles.newEventForm__repeat}`}
             >
-              <InputLabel htmlFor="alarm">Repeat</InputLabel>
-              <Select
-                native
-                onChange={(e) => {
-                  setRepeat(e.target.value);
-                }}
-                value={alarm}
-                inputProps={{
-                  name: "repeat",
-                  id: "repeat",
-                }}
-              >
-                <option value="never">Never</option>
-                <option value="every-day">Every day</option>
-                <option value="every-week">Every week</option>
-                <option value="every-2-weeks">Every 2 weeks</option>
-                <option value="every-month">Every month</option>
-                <option value="every-year">Every year</option>
-              </Select>
+              <RepeatEventSelect
+                repeat={repeat}
+                setRepeatPeriod={(period) => setRepeat(period)}
+              />
             </div>
             <div className={styles.newEventForm__select}>
-              <InputLabel htmlFor="alarm">Alarm</InputLabel>
-              <Select
-                native
-                onChange={(e) => {
-                  console.log("this is the e", e.target.value);
-                  setAlarm(e.target.value);
-                }}
-                value={alarm}
-                inputProps={{
-                  name: "alarm",
-                  id: "alarm",
-                }}
-              >
-                <option value="at-the-time-of-the-event">
-                  At the time of the event
-                </option>
-                <option value="5-minutes-before-the-event">
-                  5 minutes before the event
-                </option>
-                <option value="10-minutes-before-the-event">
-                  10 minutes before the event
-                </option>
-                <option value="15-minutes-before-the-event">
-                  15 minutes before the event
-                </option>
-                <option value="30-minutes-before-the-event">
-                  30 minutes before the event
-                </option>
-                <option value="1-hour-before-the-event">
-                  1 hour before the event
-                </option>
-                <option value="2-hour-before-the-event">
-                  2 hours before the event
-                </option>
-                <option value="1-day-before-the-event">
-                  1 day before the event
-                </option>
-                <option value="2-day-before-the-event">
-                  2 days before the event
-                </option>
-                <option value="1-week-before-the-event">
-                  1 week before the event
-                </option>
-                <option value="2-week-before-the-event">
-                  2 weeks before the event
-                </option>
-              </Select>
+              <AlarmSelect
+                alarm={alarm}
+                setAlarm={(alarm) => setAlarm(alarm)}
+              />
             </div>
-
             <DateTimePicker
               label="Date and time"
               value={dateAndTime}

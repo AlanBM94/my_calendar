@@ -1,55 +1,49 @@
+import { ContextProps } from "@/interfaces/events";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { EventsContext } from "../../contexts";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { act } from "react-dom/test-utils";
 import { FC, ReactNode } from "react";
+import { act } from "react-dom/test-utils";
+import { EventsContext } from "../../contexts";
 import NewEventForm from "./index";
 
-jest.useFakeTimers();
+interface ProviderProps {
+  children: ReactNode;
+  eventContextState: ContextProps;
+}
 
-describe("NewEventForm", () => {
-  const setNewEventMock = jest.fn();
+const Provider: FC<ProviderProps> = ({ children, eventContextState }) => {
+  return (
+    <EventsContext.Provider value={eventContextState}>
+      {children}
+    </EventsContext.Provider>
+  );
+};
 
+const setNewEventMock = jest.fn();
+
+const props = {
+  isVisible: false,
+  setNewEvent: setNewEventMock,
+};
+
+const initialMockedState = {
+  eventsState: {
+    newEvent: {
+      isLoading: false,
+      error: null,
+      data: null,
+    },
+  },
+  createEvent: jest.fn(),
+  resetNewEvent: jest.fn(),
+};
+
+describe("NewEventForm - renders and events", () => {
   beforeEach(() => {
-    const props = {
-      isVisible: false,
-      setNewEvent: setNewEventMock,
-    };
-
-    const eventContextValue = {
-      state: {
-        newEvent: {
-          isLoading: false,
-          error: null,
-          data: null,
-        },
-      },
-      createEvent: jest.fn(),
-      resetNewEvent: jest.fn(),
-    };
-
-    interface ProviderProps {
-      children: ReactNode;
-    }
-
-    const Provider: FC<ProviderProps> = ({ children }) => {
-      return (
-        <EventsContext.Provider
-          value={{
-            createEvent: eventContextValue.createEvent,
-            resetNewEvent: eventContextValue.resetNewEvent,
-            state: eventContextValue.state,
-          }}
-        >
-          {children}
-        </EventsContext.Provider>
-      );
-    };
-
     render(
       <LocalizationProvider dateAdapter={AdapterDayjs}>
-        <Provider>
+        <Provider eventContextState={initialMockedState}>
           <NewEventForm {...props} />
         </Provider>
       </LocalizationProvider>
@@ -81,54 +75,172 @@ describe("NewEventForm", () => {
     expect(setNewEventMock).toBeCalled();
   });
 
-  // it('should show error when user submits form without name', async () => {
-  //   expect(screen.getByText(/name/i)).not.toHaveClass('Mui-error');
+  it("should show error when user submits form without name", async () => {
+    expect(screen.getByText(/name/i)).not.toHaveClass("Mui-error");
 
-  //   await act(() => {
-  //     fireEvent.click(screen.getByRole('create-event-button'));
-  //   });
+    await act(() => {
+      fireEvent.click(screen.getByRole("create-event-button"));
+    });
 
-  //   expect(screen.getByText(/name/i)).toHaveClass('Mui-error');
-  // });
+    expect(screen.getByText(/the name is required/i)).toBeInTheDocument();
+  });
 
-  // it('should show error when user blur name without value', () => {
-  //   expect(screen.getByText(/name/i)).not.toHaveClass('Mui-error');
+  it("should show error when user blur name without value", () => {
+    expect(screen.getByText(/name/i)).not.toHaveClass("Mui-error");
 
-  //   fireEvent.blur(screen.getByLabelText(/name/i), {
-  //     target: { name: 'name', value: '' },
-  //   });
+    fireEvent.blur(screen.getByLabelText(/name/i), {
+      target: { name: "name", value: "" },
+    });
 
-  //   expect(screen.getByText(/name/i)).toHaveClass('Mui-error');
-  // });
+    expect(screen.getByText(/the name is required/i)).toBeInTheDocument();
+  });
+});
 
-  // it('should clear name field when form is visible', () => {
-  //   render(
-  //     <LocalizationProvider dateAdapter={AdapterDayjs}>
-  //       <NewEventForm isVisible={true} setNewEvent={setNewEventMock} />
-  //     </LocalizationProvider>,
-  //   );
+describe("NewEventForm - renders and events based on context", () => {
+  it("should clear name field when form is visible", () => {
+    render(
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <Provider eventContextState={initialMockedState}>
+          <NewEventForm isVisible={true} setNewEvent={setNewEventMock} />
+        </Provider>
+      </LocalizationProvider>
+    );
+    expect(screen.getByLabelText(/name/i).textContent).toBe("");
+  });
 
-  //   expect(screen.getByLabelText(/name/i).textContent).toBe('');
-  // });
+  it('should call "createEvent" when form is submitted', async () => {
+    const createEventMock = jest.fn();
+    render(
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <Provider
+          eventContextState={{
+            ...initialMockedState,
+            createEvent: createEventMock,
+          }}
+        >
+          <NewEventForm {...props} />
+        </Provider>
+      </LocalizationProvider>
+    );
 
-  // it('should show new event created message', async () => {
-  //   fireEvent.change(screen.getByLabelText(/name/i), {
-  //     target: {
-  //       name: 'name',
-  //       value: 'Estudiar React',
-  //     },
-  //   });
+    fireEvent.change(screen.getByLabelText(/name/i), {
+      target: { name: "name", value: "My Event" },
+    });
 
-  //   fireEvent.click(screen.getByRole('create-event-button'));
+    await act(() => {
+      fireEvent.click(screen.getByRole("create-event-button"));
+    });
 
-  //   expect(
-  //     await screen.findByText(/event estudiar react created/i),
-  //   ).toBeInTheDocument();
+    expect(createEventMock).toBeCalled();
+  });
 
-  //   await act(() => {
-  //     jest.advanceTimersByTime(3000);
-  //   });
+  it('should show a spinner when "isLoading" is true', () => {
+    render(
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <Provider
+          eventContextState={{
+            eventsState: {
+              newEvent: {
+                data: null,
+                error: null,
+                isLoading: true,
+              },
+            },
+            createEvent: jest.fn(),
+            resetNewEvent: jest.fn(),
+          }}
+        >
+          <NewEventForm {...props} />
+        </Provider>
+      </LocalizationProvider>
+    );
 
-  //   expect(screen.queryByText(/event estudiar react created/i)).toBeNull();
-  // });
+    expect(screen.getByRole("loading-spinner")).toBeInTheDocument();
+  });
+  it("should show a success message when an event is created and clear", async () => {
+    jest.useFakeTimers();
+    render(
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <Provider
+          eventContextState={{
+            eventsState: {
+              newEvent: {
+                data: {
+                  name: "My Event",
+                  date: new Date().toISOString(),
+                  alarm: "at-the-time-of-the-event",
+                  repeat: "never",
+                  createdAt: new Date().toISOString(),
+                  __v: 0,
+                  id: "123",
+                },
+                error: null,
+                isLoading: false,
+              },
+            },
+            createEvent: jest.fn(),
+            resetNewEvent: jest.fn(),
+          }}
+        >
+          <NewEventForm {...props} />
+        </Provider>
+      </LocalizationProvider>
+    );
+
+    const successMessage = await screen.findByText(
+      "Event My Event created",
+      {},
+      { timeout: 3000 }
+    );
+
+    expect(successMessage).toBeInTheDocument();
+    expect(screen.getByRole("create-event-button")).toBeDisabled();
+
+    await act(() => {
+      jest.advanceTimersByTime(3000);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("create-event-button")).not.toBeDisabled();
+    });
+  });
+
+  it("should show an error message when an event is not created", async () => {
+    jest.useFakeTimers();
+    render(
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <Provider
+          eventContextState={{
+            eventsState: {
+              newEvent: {
+                data: null,
+                error: "Error creating event",
+                isLoading: false,
+              },
+            },
+            createEvent: jest.fn(),
+            resetNewEvent: jest.fn(),
+          }}
+        >
+          <NewEventForm {...props} />
+        </Provider>
+      </LocalizationProvider>
+    );
+
+    const errorMessage = await screen.findByText(
+      "Error creating event",
+      {},
+      { timeout: 3000 }
+    );
+
+    expect(errorMessage).toBeInTheDocument();
+
+    await act(() => {
+      jest.advanceTimersByTime(3000);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("create-event-button")).not.toBeDisabled();
+    });
+  });
 });

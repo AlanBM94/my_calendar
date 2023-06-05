@@ -1,10 +1,4 @@
 import { createContext } from "react";
-import { EventsState, Event } from "@/interfaces/events";
-
-interface ContextProps {
-  state: EventsState;
-  createEvent: (event: Event) => void;
-  resetNewEvent: () => void;
-}
+import { ContextProps } from "@/interfaces/events";
 
 export const EventsContext = createContext({} as ContextProps);

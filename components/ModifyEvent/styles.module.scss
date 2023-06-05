@@ -1,0 +1,38 @@
+@import "@/styles/_mixins";
+
+.modifyEventForm {
+  display: flex;
+  flex-direction: column;
+  height: 700px;
+  width: 400px;
+  padding: 50px;
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  &__formTop {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+  }
+
+  &__formContent {
+    margin-top: 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    flex: 1;
+  }
+
+  &__select {
+    width: 100%;
+    & > div {
+      width: 100%;
+    }
+  }
+}
