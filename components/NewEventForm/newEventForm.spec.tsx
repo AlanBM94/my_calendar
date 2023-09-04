@@ -12,7 +12,10 @@ interface ProviderProps {
   eventContextState: ContextProps;
 }
 
-const Provider: FC<ProviderProps> = ({ children, eventContextState }) => {
+export const Provider: FC<ProviderProps> = ({
+  children,
+  eventContextState,
+}) => {
   return (
     <EventsContext.Provider value={eventContextState}>
       {children}
@@ -22,7 +25,7 @@ const Provider: FC<ProviderProps> = ({ children, eventContextState }) => {
 
 const setNewEventMock = jest.fn();
 
-const props = {
+export const props = {
   isVisible: false,
   setNewEvent: setNewEventMock,
 };

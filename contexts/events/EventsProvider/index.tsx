@@ -60,7 +60,6 @@ export const EventsProvider: FC<ProviderProps> = ({ children }) => {
         payload: "Error when trying to create event",
       });
     } catch (error: any) {
-      console.log("this is the error", error);
       dispatch({
         type: Types.CREATE_EVENT_ERROR,
         payload: error.response.data.errors[0].message,

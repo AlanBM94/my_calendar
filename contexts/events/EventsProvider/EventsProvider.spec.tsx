@@ -96,6 +96,10 @@ const TestComponent = () => {
 };
 
 describe("Provider functions", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it("should work selectEvent correctly", () => {
     const mockEvent = {
       name: "Estudiar React",
@@ -238,7 +242,7 @@ describe("Provider functions", () => {
     });
   });
 
-  it("should work createEvent correctly", async () => {
+  it("should work createEvent correctly when promise resolves", async () => {
     const mockPost = calendarAPI.post as jest.MockedFunction<
       typeof calendarAPI.post
     >;
@@ -269,10 +273,10 @@ describe("Provider functions", () => {
 
     fireEvent.click(screen.getByText("Create event"));
 
-    //   Wait for the API call to resolve and check that it has been called
+    // Wait for the API call to resolve and check that it has been called
     await waitFor(() => expect(calendarAPI.post).toHaveBeenCalledTimes(1));
 
-    //   Check that the API function was called with the correct arguments
+    // Check that the API function was called with the correct arguments
     expect(calendarAPI.post).toHaveBeenCalledWith("/events", {
       name: "Estudiar React",
       date: "2023-05-28T14:47:52.687Z",
@@ -281,7 +285,49 @@ describe("Provider functions", () => {
     });
   });
 
-  it("should work deleteEvent correctly", async () => {
+  it("should work createEvent correctly when promise rejects", async () => {
+    const mockPost = calendarAPI.post as jest.MockedFunction<
+      typeof calendarAPI.post
+    >;
+
+    const mockDispatch = jest.fn();
+
+    jest
+      .spyOn(React, "useReducer")
+      .mockReturnValue([Events_INITIAL_STATE, mockDispatch]);
+
+    // Define what the mock should return when the API is called
+    mockPost.mockRejectedValueOnce({
+      status: 500,
+      response: {
+        data: {
+          errors: [{ message: "Server error" }],
+        },
+      },
+    });
+
+    render(
+      <EventsProvider>
+        <TestComponent />
+      </EventsProvider>
+    );
+
+    fireEvent.click(screen.getByText("Create event"));
+
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: Types.CREATE_EVENT,
+    });
+
+    await waitFor(() => {
+      expect(calendarAPI.post).toHaveBeenCalledTimes(1);
+      expect(mockDispatch).toHaveBeenCalledWith({
+        type: Types.CREATE_EVENT_ERROR,
+        payload: "Server error",
+      });
+    });
+  });
+
+  it("should work deleteEvent correctly when promise resolves", async () => {
     const mockDelete = calendarAPI.delete as jest.MockedFunction<
       typeof calendarAPI.delete
     >;
@@ -307,7 +353,49 @@ describe("Provider functions", () => {
     expect(calendarAPI.delete).toHaveBeenCalledWith("/events/1");
   });
 
-  it("should work updateEvent correctly", async () => {
+  it("should work deleteEvent correctly when promise rejects", async () => {
+    const mockDelete = calendarAPI.delete as jest.MockedFunction<
+      typeof calendarAPI.delete
+    >;
+
+    const mockDispatch = jest.fn();
+
+    jest
+      .spyOn(React, "useReducer")
+      .mockReturnValue([Events_INITIAL_STATE, mockDispatch]);
+
+    // Define what the mock should return when the API is called
+    mockDelete.mockRejectedValueOnce({
+      status: 500,
+      response: {
+        data: {
+          errors: [{ message: "Server error" }],
+        },
+      },
+    });
+
+    render(
+      <EventsProvider>
+        <TestComponent />
+      </EventsProvider>
+    );
+
+    fireEvent.click(screen.getByText("Delete event"));
+
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: Types.DELETE_EVENT,
+    });
+
+    await waitFor(() => {
+      expect(calendarAPI.delete).toHaveBeenCalledTimes(1);
+      expect(mockDispatch).toHaveBeenCalledWith({
+        type: Types.DELETE_EVENT_ERROR,
+        payload: "Server error",
+      });
+    });
+  });
+
+  it("should work updateEvent correctly when promise resolves", async () => {
     const mockUpdate = calendarAPI.patch as jest.MockedFunction<
       typeof calendarAPI.patch
     >;
@@ -354,8 +442,47 @@ describe("Provider functions", () => {
       }
     );
   });
+
+  it("should work updateEvent correctly when promise rejects", async () => {
+    const mockUpdate = calendarAPI.patch as jest.MockedFunction<
+      typeof calendarAPI.patch
+    >;
+
+    const mockDispatch = jest.fn();
+
+    jest
+      .spyOn(React, "useReducer")
+      .mockReturnValue([Events_INITIAL_STATE, mockDispatch]);
+
+    // Define what the mock should return when the API is called
+    mockUpdate.mockRejectedValueOnce({
+      status: 500,
+      response: {
+        data: {
+          errors: [{ message: "Server error" }],
+        },
+      },
+    });
+
+    render(
+      <EventsProvider>
+        <TestComponent />
+      </EventsProvider>
+    );
+
+    fireEvent.click(screen.getByText("Update event"));
+
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: Types.UPDATE_EVENT,
+    });
+
+    //   Wait for the API call to resolve and check that it has been called
+    await waitFor(() => {
+      expect(calendarAPI.patch).toHaveBeenCalledTimes(1);
+      expect(mockDispatch).toHaveBeenCalledWith({
+        type: Types.UPDATE_EVENT_ERROR,
+        payload: "Server error",
+      });
+    });
+  });
 });
-
-// In this modified test, we're checking that calendarAPI.post (which we're mocking as mockedAxios.post) is called once, and that it's called with the correct arguments.
-
-// This still doesn't test that the dispatch calls inside createEvent are doing the right thing. To do that, you'd need to check the resulting context state after createEvent is called. However, this is more related to how the reducer works and might be better covered in a test for the reducer itself.
